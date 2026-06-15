@@ -1,0 +1,60 @@
+---
+- name: Provisionamento do Servidor WEB com Docker
+  hosts: all
+  become: yes # Executa tudo como root (sudo)
+
+  tasks:
+    - name: 1. Atualizar o sistema operacional (Update e Upgrade)
+      apt:
+        update_cache: yes
+        upgrade: dist
+        cache_valid_time: 3600
+
+    - name: 2. Instalar dependências essenciais
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+
+    - name: 3. Adicionar a chave GPG oficial do Docker
+      shell: |
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.asc
+      args:
+        creates: /etc/apt/keyrings/docker.asc
+
+    - name: 4. Adicionar o repositório oficial do Docker para o Debian Bookworm
+      shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+      args:
+        creates: /etc/apt/sources.list.d/docker.list
+
+    - name: 5. Instalar o Docker e o Docker Compose (Plugin V2)
+      apt:
+        update_cache: yes
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: 6. Criar diretório do projeto na VM
+      file:
+        path: /opt/projeto-docker
+        state: directory
+        mode: '0755'
+
+    - name: 7. Inserir o conteúdo do arquivo docker-compose.yml na VM
+      copy:
+        src: ./docker-compose.yml
+        dest: /opt/projeto-docker/docker-compose.yml
+
+    - name: 8. Executar o Docker Compose para iniciar a infraestrutura
+      command: docker compose up -d
+      args:
+        chdir: /opt/projeto-docker

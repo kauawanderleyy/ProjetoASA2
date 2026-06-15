@@ -6,6 +6,7 @@ Vagrant.configure("2") do |config|
   end
   config.vm.box = "debian/bookworm64"
   config.vm.hostname = "kaua.pedro"
+  config.ssh.insert_key = false
   config.vm.network "public_network", bridge: "eno2"
   config.vm.network "private_network", ip: "192.168.56.120"
   config.vm.provider "virtualbox" do |vb|
