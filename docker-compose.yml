@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # -----------------------------------------------------------
+  # 1. DATABASE (Imagem oficial do MySQL)
+  # -----------------------------------------------------------
+  database:
+    image: mysql:latest
+    container_name: database
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wp_user
+      MYSQL_PASSWORD: wp_password
+    networks:
+      - wordpress
+    volumes:
+      # volume com o nome 'my'
+      - my:/var/lib/mysql
+
+  # -----------------------------------------------------------
+  # 2. WEBSERVER (Imagem oficial do WordPress)
+  # -----------------------------------------------------------
+  webserver:
+    image: wordpress:latest
+    container_name: webserver
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: database:3306
+      WORDPRESS_DB_USER: wp_user
+      WORDPRESS_DB_PASSWORD: wp_password
+      WORDPRESS_DB_NAME: wordpress
+    networks:
+      - wordpress
+    volumes:
+      # volume com o nome 'app'
+      - app:/var/www/html
+    depends_on:
+      - database
+
+  # -----------------------------------------------------------
+  # 3. WEBPROXY (A imagem que você acabou de enviar para o Docker Hub)
+  # -----------------------------------------------------------
+  webproxy:
+    image: kauawanderley26/nginx-l4-custom:latest
+    container_name: webproxy
+    restart: always
+    ports:
+      # expor APENAS o proxy na porta 8080 para fora
+      - "8080:8080"
+    networks:
+      - wordpress
+    depends_on:
+      - webserver
+
+# -----------------------------------------------------------
+# DEFINIÇÃO DE REDES (Exigência: todos na rede 'wordpress')
+# -----------------------------------------------------------
+networks:
+  wordpress:
+    driver: bridge
+
+# -----------------------------------------------------------
+# DEFINIÇÃO DE VOLUMES PERSISTENTES
+# -----------------------------------------------------------
+volumes:
+  app:
+  my:

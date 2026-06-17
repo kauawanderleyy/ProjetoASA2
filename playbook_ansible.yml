@@ -9,6 +9,9 @@
         update_cache: yes
         upgrade: dist
         cache_valid_time: 3600
+        dpkg_options: 'force-confold,force-confdef'
+      environment:
+        DEBIAN_FRONTEND: noninteractive
 
     - name: 2. Instalar dependências essenciais
       apt:
