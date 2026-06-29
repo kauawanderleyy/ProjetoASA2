@@ -22,18 +22,15 @@
         state: present
 
     - name: 3. Adicionar a chave GPG oficial do Docker
-      shell: |
-        install -m 0755 -d /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-        chmod a+r /etc/apt/keyrings/docker.asc
-      args:
-        creates: /etc/apt/keyrings/docker.asc
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
 
     - name: 4. Adicionar o repositório oficial do Docker para o Debian Bookworm
-      shell: |
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-      args:
-        creates: /etc/apt/sources.list.d/docker.list
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
+        state: present
+        filename: docker
 
     - name: 5. Instalar o Docker e o Docker Compose (Plugin V2)
       apt:
@@ -56,6 +53,12 @@
       copy:
         src: ./docker-compose.yml
         dest: /opt/projeto-docker/docker-compose.yml
+
+
+    - name: 75. Inserir o arquivo de variaveis ocultas (.env) na VM
+      copy:
+        src: ./.env
+        dest: /opt/projeto-docker/.env
 
     - name: 8. Executar o Docker Compose para iniciar a infraestrutura
       command: docker compose up -d
